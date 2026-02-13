@@ -159,6 +159,99 @@ docker run -d --name uptime-bot \
   uptime-bot
 ```
 
+## Run on Kubernetes
+
+Create a Secret for your tokens:
+
+```bash
+kubectl create namespace uptime-bot
+kubectl create secret generic uptime-bot-secrets \
+  -n uptime-bot \
+  --from-literal=discord-token="your-token" \
+  --from-literal=uptime-kuma-api-key="your-api-key"
+```
+
+Then apply a manifest like this:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uptime-bot-config
+  namespace: uptime-bot
+data:
+  config.yaml: |
+    discord:
+      token: ""
+      guildId: "your-guild-id"
+      channelId: "your-channel-id"
+      clientId: "your-client-id"
+
+    uptimeKuma:
+      url: "https://uptime.example.com/metrics"
+      username: "uptime-token"
+      apiKey: ""
+
+    updateInterval: 60
+
+    monitors:
+      caseSensitive: true
+      sections:
+        - title: Services
+          filters:
+            - Plex
+            - Grafana
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uptime-bot
+  namespace: uptime-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: uptime-bot
+  template:
+    metadata:
+      labels:
+        app: uptime-bot
+    spec:
+      containers:
+        - name: uptime-bot
+          image: ghcr.io/youruser/uptime-bot:latest
+          env:
+            - name: DISCORD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-bot-secrets
+                  key: discord-token
+            - name: UPTIME_KUMA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-bot-secrets
+                  key: uptime-kuma-api-key
+            - name: CONFIG_PATH
+              value: /config/config.yaml
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+      volumes:
+        - name: config
+          configMap:
+            name: uptime-bot-config
+```
+
+Secrets are injected as env vars (`DISCORD_TOKEN`, `UPTIME_KUMA_API_KEY`) which override the empty values in the ConfigMap. The YAML config is mounted read-only at `/config/config.yaml`.
+
 ## Default Status Icons
 
 | Icon | Status | Config key |
