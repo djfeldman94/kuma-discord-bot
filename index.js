@@ -13,6 +13,16 @@ try {
     process.exit(1);
 }
 
+const DEFAULT_EMOJIS = {
+    online: '🟢',
+    offline: '🔴',
+    warning: '🟡',
+    maintenance: '🔵',
+    unknown: '❓',
+};
+
+const globalEmojis = { ...DEFAULT_EMOJIS, ...yamlConfig.emojis };
+
 const config = {
     token: process.env.DISCORD_TOKEN || yamlConfig.discord.token,
     guildID: yamlConfig.discord.guildId,
@@ -25,17 +35,27 @@ const config = {
     caseSensitive: yamlConfig.monitors.caseSensitive !== false,
 };
 
-// Build a filter function — each filter is either a plain string (exact match)
-// or an object { regex: "pattern" } for regex matching
+const STATUS_KEYS = { 0: 'offline', 1: 'online', 2: 'warning', 3: 'maintenance' };
+
+// Resolve the emoji for a status code, checking per-filter overrides then global
+function statusEmoji(statusCode, filterEmojis) {
+    const key = STATUS_KEYS[statusCode] || 'unknown';
+    return (filterEmojis && filterEmojis[key]) || globalEmojis[key];
+}
+
+// Each filter is a plain string (exact match), or an object with `regex` or `name`
 function matchesFilter(monitorName, filter) {
-    if (typeof filter === 'object' && filter.regex) {
+    const pattern = typeof filter === 'object' ? filter.regex : null;
+    const name = typeof filter === 'object' ? filter.name : filter;
+
+    if (pattern) {
         const flags = config.caseSensitive ? '' : 'i';
-        return new RegExp(filter.regex, flags).test(monitorName);
+        return new RegExp(pattern, flags).test(monitorName);
     }
     if (config.caseSensitive) {
-        return monitorName === filter;
+        return monitorName === String(name);
     }
-    return monitorName.toLowerCase() === String(filter).toLowerCase();
+    return monitorName.toLowerCase() === String(name).toLowerCase();
 }
 // Create a new Discord client instance with specified intents
 const client = new Client({
@@ -123,9 +143,13 @@ async function updateMessages() {
 
         // Filter and send monitors for each configured section
         for (const section of config.monitors) {
-            const filtered = monitors.filter(monitor =>
-                section.filters.some(filter => matchesFilter(monitor.monitor_name, filter))
-            );
+            const filtered = [];
+            for (const monitor of monitors) {
+                const hit = section.filters.find(f => matchesFilter(monitor.monitor_name, f));
+                if (hit) {
+                    filtered.push({ ...monitor, emojis: typeof hit === 'object' ? hit.emojis : undefined });
+                }
+            }
             if (filtered.length === 0) {
                 console.log(`${new Date().toLocaleString()} | No matches for "${section.title}", skipping`);
                 continue;
@@ -142,24 +166,7 @@ async function updateMessages() {
 async function sendMonitorsMessage(channel, category, monitors) {
     // Create the description for the embed message
     let description = monitors.map(monitor => {
-        let statusEmoji = '';
-        switch (monitor.status) {
-            case 0:
-                statusEmoji = '🔴'; // Offline
-                break;
-            case 1:
-                statusEmoji = '🟢'; // Online
-                break;
-            case 2:
-                statusEmoji = '🟡'; // Warning
-                break;
-            case 3:
-                statusEmoji = '🔵'; // Maintenance
-                break;
-            default:
-                statusEmoji = '❓'; // Unknown
-        }
-        return `${statusEmoji} | ${monitor.monitor_name}`;
+        return `${statusEmoji(monitor.status, monitor.emojis)} | ${monitor.monitor_name}`;
     }).join('\n');
 
     // Create the embed message

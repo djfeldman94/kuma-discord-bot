@@ -10,6 +10,14 @@ uptimeKuma:
 
 updateInterval: 60     # seconds
 
+# Global status emojis (all optional, these are the defaults)
+# emojis:
+#   online: "🟢"
+#   offline: "🔴"
+#   warning: "🟡"
+#   maintenance: "🔵"
+#   unknown: "❓"
+
 monitors:
   caseSensitive: true
   sections:
@@ -22,3 +30,7 @@ monitors:
       filters:
         - regex: "^web\\d+$"    # regex filter
         - cdn                    # exact match filter
+        - name: api             # exact match with custom emojis
+          emojis:
+            online: "✅"
+            offline: "❌"

@@ -58,6 +58,37 @@ filters:
 
 Set `caseSensitive: false` at the monitors level to make all matching (both exact and regex) case-insensitive.
 
+### Custom Emojis
+
+Status emojis can be customized globally and/or per filter. Per-filter emojis take precedence over global ones.
+
+**Global** — set at the top level of `config.yaml`:
+
+```yaml
+emojis:
+  online: "✅"
+  offline: "❌"
+  warning: "⚠️"
+  maintenance: "🔧"
+  unknown: "❓"
+```
+
+**Per filter** — use the object form and add an `emojis` key:
+
+```yaml
+filters:
+  - Lobby                        # plain string, uses global emojis
+  - name: api                    # exact match with custom emojis
+    emojis:
+      online: "✅"
+      offline: "❌"
+  - regex: "^web\\d+$"          # regex with custom emojis
+    emojis:
+      offline: "🚨"
+```
+
+Only the statuses you specify are overridden; the rest fall back to global, then to the built-in defaults.
+
 ### Secret Overrides
 
 `DISCORD_TOKEN` and `UPTIME_KUMA_API_KEY` can be set as environment variables to override the YAML values. This is useful for Kubernetes Secrets or CI environments where you don't want tokens in config files.
@@ -107,11 +138,12 @@ docker run -d --name uptime-bot \
   uptime-bot
 ```
 
-## Status Icons
+## Default Status Icons
 
-| Icon | Meaning |
-|---|---|
-| :green_circle: | Online |
-| :red_circle: | Offline |
-| :yellow_circle: | Warning |
-| :large_blue_circle: | Maintenance |
+| Icon | Status | Config key |
+|---|---|---|
+| :green_circle: | Online | `online` |
+| :red_circle: | Offline | `offline` |
+| :yellow_circle: | Warning | `warning` |
+| :large_blue_circle: | Maintenance | `maintenance` |
+| :question: | Unknown | `unknown` |
