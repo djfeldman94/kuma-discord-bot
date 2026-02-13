@@ -7,55 +7,64 @@ A Discord bot that pulls monitor statuses from [Uptime Kuma](https://github.com/
 - An Uptime Kuma instance with an API key (Settings > API Keys)
 - A Discord bot token with `Guilds` and `GuildMessages` intents enabled
 
-## Environment Variables
+## Configuration
 
-| Variable | Required | Description |
-|---|---|---|
-| `DISCORD_TOKEN` | Yes | Discord bot token |
-| `DISCORD_GUILD_ID` | Yes | Server (guild) ID |
-| `DISCORD_CHANNEL_ID` | Yes | Channel ID to post embeds in |
-| `DISCORD_CLIENT_ID` | Yes | Bot application client ID |
-| `UPTIME_KUMA_URL` | Yes | Uptime Kuma metrics endpoint (e.g. `https://uptime.example.com/metrics`) |
-| `UPTIME_KUMA_API_KEY` | Yes | Uptime Kuma API key |
-| `UPDATE_INTERVAL` | No | Refresh interval in seconds (default: `60`) |
-| `MONITORS` | No | JSON array defining monitor sections (see below) |
-| `MONITOR_CASE_SENSITIVE` | No | Case-sensitive filter matching (default: `true`) |
-| `MONITOR_REGEX` | No | Interpret filters as regex patterns (default: `false`) |
+Copy the example config and fill in your values:
+
+```bash
+cp config.example.yaml config.yaml
+```
+
+### `config.yaml`
+
+```yaml
+discord:
+  token: ""           # or set DISCORD_TOKEN env var
+  guildId: ""
+  channelId: ""
+  clientId: ""
+
+uptimeKuma:
+  url: ""
+  apiKey: ""           # or set UPTIME_KUMA_API_KEY env var
+
+updateInterval: 60     # seconds
+
+monitors:
+  caseSensitive: true
+  sections:
+    - title: Gaming
+      filters:
+        - Lobby
+        - Skyblock
+        - Survival
+    - title: Web
+      filters:
+        - regex: "^web\\d+$"
+        - cdn
+```
 
 ### Monitor Sections
 
-The `MONITORS` variable is a JSON array of sections. Each section has a `title` (the embed heading) and `filters` (an array of strings to match against monitor names). If `MONITORS` is not set, no embeds will be posted.
+Each section becomes a Discord embed. The `filters` array matches against monitor names from Uptime Kuma. If no monitors match a section's filters, that section is skipped entirely.
 
-**Exact match (default):**
+Filters can be **plain strings** (exact match) or **regex objects**:
 
-```json
-[
-  {"title": "Gaming", "filters": ["Lobby", "Skyblock", "Survival"]},
-  {"title": "Discord", "filters": ["Discord bot", "Status bot"]},
-  {"title": "Web", "filters": ["web1", "web2", "web3"]}
-]
+```yaml
+filters:
+  - Lobby                    # exact match
+  - regex: "^web\\d+$"      # regex match
 ```
 
-**Case-insensitive match** (`MONITOR_CASE_SENSITIVE=false`):
+Set `caseSensitive: false` at the monitors level to make all matching (both exact and regex) case-insensitive.
 
-```json
-[
-  {"title": "Web", "filters": ["Web1", "WEB2"]}
-]
-```
+### Secret Overrides
 
-Filters `"Web1"` and `"WEB2"` will match `"web1"` and `"web2"`.
+`DISCORD_TOKEN` and `UPTIME_KUMA_API_KEY` can be set as environment variables to override the YAML values. This is useful for Kubernetes Secrets or CI environments where you don't want tokens in config files.
 
-**Regex mode** (`MONITOR_REGEX=true`):
+### Custom Config Path
 
-```json
-[
-  {"title": "All Services", "filters": [".*"]},
-  {"title": "Web", "filters": ["^web\\d+$"]}
-]
-```
-
-Regex mode and case-insensitive mode can be combined.
+Set the `CONFIG_PATH` environment variable to load config from a different location (default: `./config.yaml`).
 
 ## Run with Node
 
@@ -65,20 +74,8 @@ Requires Node.js 18+.
 git clone https://github.com/youruser/uptime-bot.git
 cd uptime-bot
 npm install
-```
-
-Set the environment variables and run:
-
-```bash
-export DISCORD_TOKEN="your-token"
-export DISCORD_GUILD_ID="your-guild-id"
-export DISCORD_CHANNEL_ID="your-channel-id"
-export DISCORD_CLIENT_ID="your-client-id"
-export UPTIME_KUMA_URL="https://uptime.example.com/metrics"
-export UPTIME_KUMA_API_KEY="your-api-key"
-export MONITORS='[{"title":"All Services","filters":[".*"]}]'
-export MONITOR_REGEX="true"
-
+cp config.example.yaml config.yaml
+# Edit config.yaml with your values
 node index.js
 ```
 
@@ -92,40 +89,22 @@ docker build -t uptime-bot .
 
 ### Run
 
+Mount your `config.yaml` into the container:
+
 ```bash
 docker run -d --name uptime-bot \
-  -e DISCORD_TOKEN="your-token" \
-  -e DISCORD_GUILD_ID="your-guild-id" \
-  -e DISCORD_CHANNEL_ID="your-channel-id" \
-  -e DISCORD_CLIENT_ID="your-client-id" \
-  -e UPTIME_KUMA_URL="https://uptime.example.com/metrics" \
-  -e UPTIME_KUMA_API_KEY="your-api-key" \
-  -e UPDATE_INTERVAL="60" \
-  -e MONITORS='[{"title":"All Services","filters":[".*"]}]' \
-  -e MONITOR_REGEX="true" \
+  -v $(pwd)/config.yaml:/app/config.yaml:ro \
   uptime-bot
 ```
 
-### Using an env file
-
-Create a `.env` file:
-
-```
-DISCORD_TOKEN=your-token
-DISCORD_GUILD_ID=your-guild-id
-DISCORD_CHANNEL_ID=your-channel-id
-DISCORD_CLIENT_ID=your-client-id
-UPTIME_KUMA_URL=https://uptime.example.com/metrics
-UPTIME_KUMA_API_KEY=your-api-key
-UPDATE_INTERVAL=60
-MONITORS=[{"title":"All Services","filters":[".*"]}]
-MONITOR_REGEX=true
-```
-
-Then run with:
+To override secrets via env vars:
 
 ```bash
-docker run -d --name uptime-bot --env-file .env uptime-bot
+docker run -d --name uptime-bot \
+  -v $(pwd)/config.yaml:/app/config.yaml:ro \
+  -e DISCORD_TOKEN="your-token" \
+  -e UPTIME_KUMA_API_KEY="your-api-key" \
+  uptime-bot
 ```
 
 ## Status Icons

@@ -1,0 +1,24 @@
+discord:
+  token: ""           # or set DISCORD_TOKEN env var
+  guildId: ""
+  channelId: ""
+  clientId: ""
+
+uptimeKuma:
+  url: ""
+  apiKey: ""           # or set UPTIME_KUMA_API_KEY env var
+
+updateInterval: 60     # seconds
+
+monitors:
+  caseSensitive: true
+  sections:
+    - title: Gaming
+      filters:
+        - Lobby
+        - Skyblock
+        - Survival
+    - title: Web
+      filters:
+        - regex: "^web\\d+$"    # regex filter
+        - cdn                    # exact match filter

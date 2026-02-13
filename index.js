@@ -1,28 +1,41 @@
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const yaml = require('js-yaml');
+const fs = require('fs');
+const path = require('path');
+
+// Load YAML config
+const configPath = process.env.CONFIG_PATH || './config.yaml';
+let yamlConfig;
+try {
+    yamlConfig = yaml.load(fs.readFileSync(path.resolve(configPath), 'utf8'));
+} catch (err) {
+    console.error(`Failed to load config from ${configPath}:`, err.message);
+    process.exit(1);
+}
 
 const config = {
-    token: process.env.DISCORD_TOKEN,
-    guildID: process.env.DISCORD_GUILD_ID,
-    channelID: process.env.DISCORD_CHANNEL_ID,
-    clientID: process.env.DISCORD_CLIENT_ID,
-    updatetime: parseInt(process.env.UPDATE_INTERVAL || '60'),
-    uptimeKumaUrl: process.env.UPTIME_KUMA_URL,
-    uptimeKumaApiKey: process.env.UPTIME_KUMA_API_KEY,
-    monitors: JSON.parse(process.env.MONITORS || '[]'),
-    caseSensitive: process.env.MONITOR_CASE_SENSITIVE !== 'false',
-    useRegex: process.env.MONITOR_REGEX === 'true',
+    token: process.env.DISCORD_TOKEN || yamlConfig.discord.token,
+    guildID: yamlConfig.discord.guildId,
+    channelID: yamlConfig.discord.channelId,
+    clientID: yamlConfig.discord.clientId,
+    updatetime: yamlConfig.updateInterval || 60,
+    uptimeKumaUrl: yamlConfig.uptimeKuma.url,
+    uptimeKumaApiKey: process.env.UPTIME_KUMA_API_KEY || yamlConfig.uptimeKuma.apiKey,
+    monitors: yamlConfig.monitors.sections || [],
+    caseSensitive: yamlConfig.monitors.caseSensitive !== false,
 };
 
-// Build a filter function based on config flags
+// Build a filter function — each filter is either a plain string (exact match)
+// or an object { regex: "pattern" } for regex matching
 function matchesFilter(monitorName, filter) {
-    if (config.useRegex) {
+    if (typeof filter === 'object' && filter.regex) {
         const flags = config.caseSensitive ? '' : 'i';
-        return new RegExp(filter, flags).test(monitorName);
+        return new RegExp(filter.regex, flags).test(monitorName);
     }
     if (config.caseSensitive) {
         return monitorName === filter;
     }
-    return monitorName.toLowerCase() === filter.toLowerCase();
+    return monitorName.toLowerCase() === String(filter).toLowerCase();
 }
 // Create a new Discord client instance with specified intents
 const client = new Client({
@@ -39,7 +52,7 @@ for (const section of config.monitors) {
 }
 
 // Event listener for when the bot is ready
-client.once('ready', async () => {
+client.once('clientReady', async () => {
     console.log('Bot is online!');
 
     // Fetch the channel using the channel ID from the config
@@ -113,6 +126,10 @@ async function updateMessages() {
             const filtered = monitors.filter(monitor =>
                 section.filters.some(filter => matchesFilter(monitor.monitor_name, filter))
             );
+            if (filtered.length === 0) {
+                console.log(`${new Date().toLocaleString()} | No matches for "${section.title}", skipping`);
+                continue;
+            }
             await sendMonitorsMessage(channel, section.title, filtered);
         }
 
