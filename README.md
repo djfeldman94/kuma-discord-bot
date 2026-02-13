@@ -148,6 +148,7 @@ Mount your `config.yaml` into the container:
 ```bash
 docker run -d --name uptime-bot \
   -v $(pwd)/config.yaml:/app/config.yaml:ro \
+  -e TZ="America/New_York" \
   uptime-bot
 ```
 
@@ -156,10 +157,13 @@ To override secrets via env vars:
 ```bash
 docker run -d --name uptime-bot \
   -v $(pwd)/config.yaml:/app/config.yaml:ro \
+  -e TZ="America/New_York" \
   -e DISCORD_TOKEN="your-token" \
   -e UPTIME_KUMA_API_KEY="your-api-key" \
   uptime-bot
 ```
+
+The `TZ` variable sets the timezone for timestamps in embeds. Defaults to UTC if not set. See the [tz database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for valid values.
 
 ## Run on Kubernetes
 
@@ -235,6 +239,8 @@ spec:
                   key: uptime-kuma-api-key
             - name: CONFIG_PATH
               value: /config/config.yaml
+            - name: TZ
+              value: America/New_York
           volumeMounts:
             - name: config
               mountPath: /config
