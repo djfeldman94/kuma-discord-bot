@@ -2,6 +2,8 @@
 
 A Discord bot that pulls monitor statuses from [Uptime Kuma](https://github.com/louislam/uptime-kuma)'s Prometheus metrics endpoint and posts live-updating embeds to a channel.
 
+Inspired by and code heavily borrowed from [UptimeKuma-DiscordBot](https://github.com/Lauwy222/UptimeKuma-DiscordBot?tab=readme-ov-file).
+
 ## Prerequisites
 
 - An Uptime Kuma instance with an API key (Settings > API Keys). The `username` and `apiKey` fields map to the API token name and key. These also work as standard username/password for basic auth (e.g. if Uptime Kuma is behind an [authentik](https://goauthentik.io/) basic auth proxy).
