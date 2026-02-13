@@ -140,3 +140,8 @@ vite.config.ts.timestamp-*
 
 # Config files
 config.yaml
+
+
+# Claude
+.claude/*
+CLAUDE.md
