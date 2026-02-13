@@ -125,7 +125,7 @@ Set the `CONFIG_PATH` environment variable to load config from a different locat
 Requires Node.js 18+.
 
 ```bash
-git clone https://github.com/youruser/uptime-bot.git
+git clone https://github.com/djfeldman94/uptime-bot.git
 cd uptime-bot
 npm install
 cp config.example.yaml config.yaml
@@ -221,7 +221,7 @@ spec:
     spec:
       containers:
         - name: uptime-bot
-          image: ghcr.io/youruser/uptime-bot:latest
+          image: ghcr.io/djfeldman94/uptime-bot:latest
           env:
             - name: DISCORD_TOKEN
               valueFrom:
