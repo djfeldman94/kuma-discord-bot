@@ -4,7 +4,7 @@ A Discord bot that pulls monitor statuses from [Uptime Kuma](https://github.com/
 
 ## Prerequisites
 
-- An Uptime Kuma instance with an API key (Settings > API Keys)
+- An Uptime Kuma instance with an API key (Settings > API Keys). The `username` and `apiKey` fields map to the API token name and key. These also work as standard username/password for basic auth (e.g. if Uptime Kuma is behind an [authentik](https://goauthentik.io/) basic auth proxy).
 - A Discord bot — see the [Discord developer docs](https://discord.com/developers/docs/getting-started) to create one
 
 ### Required Gateway Intents
@@ -45,7 +45,8 @@ discord:
 
 uptimeKuma:
   url: ""
-  apiKey: ""           # or set UPTIME_KUMA_API_KEY env var
+  username: ""         # API token name, or username for basic auth
+  apiKey: ""           # API token key, or password for basic auth (or set UPTIME_KUMA_API_KEY env var)
 
 updateInterval: 60     # seconds
 clearMessages: true    # clear bot's previous messages on startup

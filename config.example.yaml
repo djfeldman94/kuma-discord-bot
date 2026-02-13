@@ -6,7 +6,8 @@ discord:
 
 uptimeKuma:
   url: ""
-  apiKey: ""           # or set UPTIME_KUMA_API_KEY env var
+  username: ""         # API token name, or username for basic auth
+  apiKey: ""           # API token key, or password for basic auth (or set UPTIME_KUMA_API_KEY env var)
 
 updateInterval: 60     # seconds
 clearMessages: true    # clear bot's previous messages on startup

@@ -30,6 +30,7 @@ const config = {
     clientID: yamlConfig.discord.clientId,
     updatetime: yamlConfig.updateInterval || 60,
     uptimeKumaUrl: yamlConfig.uptimeKuma.url,
+    uptimeKumaUsername: yamlConfig.uptimeKuma.username,
     uptimeKumaApiKey: process.env.UPTIME_KUMA_API_KEY || yamlConfig.uptimeKuma.apiKey,
     monitors: yamlConfig.monitors.sections || [],
     caseSensitive: yamlConfig.monitors.caseSensitive !== false,
@@ -111,7 +112,7 @@ async function updateMessages() {
         }
 
         // Fetch monitor data from Uptime Kuma's Prometheus metrics endpoint
-        const credentials = Buffer.from(`uptime-token:${config.uptimeKumaApiKey}`).toString('base64');
+        const credentials = Buffer.from(`${config.uptimeKumaUsername}:${config.uptimeKumaApiKey}`).toString('base64');
         const response = await fetch(config.uptimeKumaUrl, {
             headers: { 'Authorization': `Basic ${credentials}` }
         });
