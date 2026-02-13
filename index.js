@@ -33,6 +33,7 @@ const config = {
     uptimeKumaApiKey: process.env.UPTIME_KUMA_API_KEY || yamlConfig.uptimeKuma.apiKey,
     monitors: yamlConfig.monitors.sections || [],
     caseSensitive: yamlConfig.monitors.caseSensitive !== false,
+    clearMessages: yamlConfig.clearMessages !== false,
 };
 
 const STATUS_KEYS = { 0: 'offline', 1: 'online', 2: 'warning', 3: 'maintenance' };
@@ -79,8 +80,9 @@ client.once('clientReady', async () => {
     const channel = await client.channels.fetch(config.channelID);
     
     if (channel && channel.isTextBased()) {
-        // Clear the channel if it's a text-based channel
-        await clearChannel(channel);
+        if (config.clearMessages) {
+            await clearBotMessages(channel);
+        }
     } else {
         console.error(`Unable to find text channel with ID ${config.channelID}`);
     }
@@ -202,15 +204,17 @@ async function sendMonitorsMessage(channel, category, monitors) {
     }
 }
 
-// Function to clear the messages in a channel
-async function clearChannel(channel) {
+// Clear only the bot's own messages from the channel
+async function clearBotMessages(channel) {
     try {
-        // Fetch all messages in the channel and bulk delete them
         const fetchedMessages = await channel.messages.fetch();
-        await channel.bulkDelete(fetchedMessages);
-        console.log('Cleared channel');
+        const botMessages = fetchedMessages.filter(msg => msg.author.id === client.user.id);
+        if (botMessages.size > 0) {
+            await channel.bulkDelete(botMessages);
+            console.log(`Cleared ${botMessages.size} bot message(s)`);
+        }
     } catch (error) {
-        console.error('Error clearing channel:', error);
+        console.error('Error clearing bot messages:', error);
     }
 }
 

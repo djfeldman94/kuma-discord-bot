@@ -9,6 +9,7 @@ uptimeKuma:
   apiKey: ""           # or set UPTIME_KUMA_API_KEY env var
 
 updateInterval: 60     # seconds
+clearMessages: true    # clear bot's previous messages on startup
 
 # Global status emojis (all optional, these are the defaults)
 # emojis:

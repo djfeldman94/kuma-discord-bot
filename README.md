@@ -5,7 +5,26 @@ A Discord bot that pulls monitor statuses from [Uptime Kuma](https://github.com/
 ## Prerequisites
 
 - An Uptime Kuma instance with an API key (Settings > API Keys)
-- A Discord bot token with `Guilds` and `GuildMessages` intents enabled
+- A Discord bot — see the [Discord developer docs](https://discord.com/developers/docs/getting-started) to create one
+
+### Required Gateway Intents
+
+Enable these in the [Developer Portal](https://discord.com/developers/applications) under Bot > Privileged Gateway Intents:
+
+- **Server Members Intent** is _not_ required
+- **Message Content Intent** is _not_ required
+
+The bot uses the non-privileged `Guilds` and `GuildMessages` intents (enabled by default).
+
+### Required Bot Permissions
+
+| Permission | Reason |
+|---|---|
+| View Channels | Fetch the target channel |
+| Send Messages | Post monitor embeds |
+| Embed Links | Rich embed formatting |
+| Read Message History | Fetch existing messages to edit them |
+| Manage Messages | Bulk-delete bot messages on startup (only needed if `clearMessages: true`) |
 
 ## Configuration
 
@@ -29,6 +48,7 @@ uptimeKuma:
   apiKey: ""           # or set UPTIME_KUMA_API_KEY env var
 
 updateInterval: 60     # seconds
+clearMessages: true    # clear bot's previous messages on startup
 
 monitors:
   caseSensitive: true
